@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void read_0(char* c, FILE* infile);
 void read_1(char* c, FILE* infile);
@@ -30,7 +31,6 @@ int main(int argc, char **argv){
             printf("%i \n", c);
             read_1(&c, infile);
         }
-        //printf("%c \n", c);
     }
     return 0;
 }
@@ -44,27 +44,36 @@ void read_0(char* c, FILE* infile){
     char a;
     char b;
 
-    while(i < 2){
+    while(i < num){
         fread(&a, 1, 1, infile);
         fread(&b, 1, 1, infile);
-        printf("%c%c ", a, b);
+        printf("%c%c \n", a, b);//prints the bytes next to one another
         i++;
     }
     printf("\n");
 };
 
 void read_1(char* c, FILE* infile){
-    char one, two, three;
-    fread(&one, 1, 1, infile);
-    fread(&two, 1, 1, infile);
-    fread(&three, 1, 1, infile);
+    char num[4];
+    char* cur;
+
+    fread(&num[0], 1, 1, infile);
+    fread(&num[1], 1, 1, infile);
+    fread(&num[2], 1, 1, infile);
+    printf("%i \n", num[0] - 48);
+    printf("%s \n", num);
     
+    int len = 0;
     while(fread(c, 1, 1, infile) == 1){
-        if(*c != 0 || *c != 1){
-            printf("%c", *c);
+        len = strlen(cur);
+        
+        if(*c != ','){
+            cur[len] = *c;
+            cur[len+1] = '\0';
         } else{
             printf("%i \n", *c);
             break;
         }
     }
+    printf("\n\n");
 };

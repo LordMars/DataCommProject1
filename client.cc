@@ -21,6 +21,13 @@ int main(int argc, char *argv[]) {
     char* toname = argv[5];
 
     int list_s;
+    int LISTENQ;
+    in_port_t port = atoi(servPort);
+    sockaddr_in servaddr;
+
+    servaddr.sin_addr.s_addr = atoi(servIP);//tells the os to take care of the ip address
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = port;
 
     if ((list_s = socket (PF_INET, SOCK_STREAM, 0)) < 0) {
 
