@@ -52,7 +52,7 @@ void read_0(char* c, FILE* infile){
     while(i < num){
         fread(&a, 1, 1, infile);
         fread(&b, 1, 1, infile);
-        printf("%c%c \n", a, b);//prints the bytes next to one another
+        printf("%i \n", (u_int16_t)((a<<8) + b));//prints the bytes next to one another
         i++;
     }
 }
@@ -65,8 +65,6 @@ void read_1(char* c, FILE* infile){
     fread(&num[1], 1, 1, infile);
     fread(&num[2], 1, 1, infile);
 
-    //printf("%s \n", num);
-    
     int amount = (num[0]-48)*100 + (num[1]-48)*10 + (num[2]-48);
     printf("Amount: %i \n", amount);
     for(int i = 0; i < amount; i++){
