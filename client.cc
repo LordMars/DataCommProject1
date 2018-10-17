@@ -26,25 +26,55 @@ int main(int argc, char *argv[]) {
     char* toname = argv[5];
     char* buffer;
 
+    FILE * infile;
+    infile = fopen(argv[1], "rb");
+
     int conn_s;
     int LISTENQ;
     in_port_t port = atoi(servPort);
     sockaddr_in servaddr;
 
-    servaddr.sin_addr.s_addr = /*atoi(servIP)*/INADDR_ANY;//tells the os to take care of the ip address
+    memset(&servaddr, 0, sizeof(servaddr));
+    if (inet_aton (servIP, &servaddr.sin_addr) <= 0) {
+        printf("Invalid IP. \n");
+    }
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = port;
 
     if ((conn_s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf(" Socket error\n");
+        printf("Socket error\n");
     }
     if (connect (conn_s, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
         printf("Connection Error\n");
     }
 
-    /*Writeline( conn_s, buffer, strlen(buffer));
-    Readline(conn_s, buffer, MAX_LINE-1);*/
+    int length = ftell(infile);
+    fread(buffer, 1, length, infile);
+    fclose(infile);
+
+    Writeline( conn_s, buffer, strlen(buffer));
+
+    /*buffer = toname;
+    strcat(buffer, "\n");
+    Writeline( conn_s, buffer, strlen(buffer));*/
+
     close(conn_s);
+}
+
+ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
+    int nleft = maxlen;
+    int nwritten;
+
+    while (nleft > 0) {
+        if ((nwritten = write(sockd, vptr, nleft)) <= 0 ) {
+            if (errno == EINTR)
+                nwritten = 0;
+            else
+                return -1;
+        }else{
+            nleft-=nwritten;
+        }
+    }
 }
 
 ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
@@ -52,10 +82,10 @@ ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
         char c;
         int rc;
         if ( (rc = read(sockd, &c, 1)) == 1 ) {
-            //choose(&c, FILE* infile);
+            printf("%i\n", c);
         }
         else if ( rc == 0 ) {
-
+            break;
         }
         else {
             if (errno == EINTR)
@@ -65,15 +95,3 @@ ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
     }
 }
 
-ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
-    int nleft;
-    while (nleft > 0) {
-        int nwritten;
-        if ((nwritten = write(sockd, vptr, nleft)) <= 0 ) {
-            if (errno == EINTR)
-                nwritten = 0;
-            else
-                return -1;
-        }
-    }
-}

@@ -11,7 +11,7 @@
 #define ECHO_PORT (2002)
 #define MAX_LINE (1000)
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen);
+ssize_t Readline(int sockd, void *vptr, size_t maxlen, char* infile, char* outfile);
 ssize_t Writeline(int sockd, void *vptr, size_t maxlen);
 void read_0(char* c, FILE* infile);
 void read_1(char* c, FILE* infile);
@@ -31,69 +31,76 @@ int main(int argc, char *argv[]){
 
     sockaddr_in servaddr;
 
-    //servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_addr.s_addr = INADDR_ANY;//tells the os to take care of the ip address
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = port;
 
-    if ((list_s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+
+    if ((list_s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {//creates a socket
         printf("Socket Error. \n");
     }
-    if (bind (list_s, (struct sockaddr *) &servaddr, sizeof(servaddr))< 0) {
+    if (bind (list_s, (struct sockaddr *) &servaddr, sizeof(servaddr))< 0) {//binds the socket to a given port and ipaddress
         printf("Binding Error. \n");
     }else{
         printf("%i \n", servaddr.sin_port);
     }
-    if (listen (list_s, LISTENQ) < 0) {
+    if (listen (list_s, LISTENQ) < 0) {//waits for a client application to connect to the server
         printf("Listening Error. \n");
     }
     while ( 1 ) {
-        sockaddr* cliaddr;
-        socklen_t addrlen[sizeof(cliaddr)];
-        char* buffer;
+        sockaddr cliaddr[MAX_LINE];
+        socklen_t addrlen[MAX_LINE];
+        char buffer[MAX_LINE];
+        char infile_name[MAX_LINE];
+        char outfile_name[MAX_LINE];
 
-        if ((conn_s = accept (list_s, cliaddr, addrlen)) < 0) {
-            printf("Accepting Error");
+        if ((conn_s = accept (list_s, cliaddr, addrlen)) < 0) {//accepts an incoming connection from a client socket
+            printf("%i\n",list_s);
+            printf("%i\n",*addrlen);
+            printf("Accepting Error\n");
         }
-        printf("1\n");
-        Readline (conn_s, buffer, MAX_LINE-1);
-        printf("2\n");
-        Writeline( conn_s, buffer, strlen(buffer));
+        Readline (conn_s, buffer, MAX_LINE-1, infile_name, outfile_name);
+        //Writeline( conn_s, buffer, strlen(buffer));
         if ( close (conn_s) < 0 ) {
             
         }
-    }
-    
+    }  
 
 }
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
-    for (int n = 1; n < maxlen; n++ ) {
-        char c;
-        int rc;
-        if ( (rc = read(sockd, &c, 1)) == 1 ) {
-            //choose(&c, FILE* infile);
+ssize_t Readline(int sockd, void *vptr, size_t maxlen, char* infile, char* outfile) {
+    int rc;
+    char c[maxlen];
+    vptr = c;
+    for (int n = 0; n < maxlen; n++ ) {
+        if ( (rc = read(sockd, &c, maxlen)) == 1 ) {
+            //if(c[rc - 1] ==){}
         }
         else if ( rc == 0 ) {
-
+            printf("%s\n", (char*)vptr);
+            memset(vptr, 0, maxlen);
+            break;
         }
         else {
             if (errno == EINTR)
                 continue;
+            memset(vptr, 0, maxlen);
             return -1;
         }
     }
 }
 
 ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
-    int nleft;
+    int nleft = maxlen;
+    int nwritten;
     while (nleft > 0) {
-        int nwritten;
         if ((nwritten = write(sockd, vptr, nleft)) <= 0 ) {
             if (errno == EINTR)
                 nwritten = 0;
             else
                 return -1;
+        }else{
+            nleft-=nwritten;
         }
     }
 }
