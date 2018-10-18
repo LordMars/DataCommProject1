@@ -11,11 +11,11 @@
 #define ECHO_PORT (2002)
 #define MAX_LINE (1000)
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen, char* infile, char* outfile);
+ssize_t Readline(int sockd, void *vptr, size_t maxlen, int type);
 ssize_t Writeline(int sockd, void *vptr, size_t maxlen);
-void read_0(char* c, int sockd);
-void read_1(char* c, int sockd);
-void choose(char* c, int sockd);
+void read_0(char* c, int sockd, int type);
+void read_1(char* c, int sockd, int type);
+void choose(char* c, int sockd, int type);
 
 int main(int argc, char *argv[]){
     if (argc != 2){
@@ -49,33 +49,37 @@ int main(int argc, char *argv[]){
         sockaddr cliaddr[MAX_LINE];
         socklen_t addrlen[MAX_LINE];
         char buffer[MAX_LINE];
-        char infile_name[MAX_LINE];
         char outfile_name[MAX_LINE];
+        int format;
+        char filename[MAX_LINE];
+        //char* length_of_name;
 
         if ((conn_s = accept (list_s, cliaddr, addrlen)) < 0) {//accepts an incoming connection from a client socket
             printf("%i\n",list_s);
             printf("%i\n",*addrlen);
             printf("Accepting Error\n");
         }
-        Readline (conn_s, buffer, MAX_LINE-1, infile_name, outfile_name);
-        //Writeline( conn_s, buffer, strlen(buffer));
-        if ( close (conn_s) < 0 ) {
-            
-        }
+
+        read(conn_s, filename, MAX_LINE);
+        printf("%s\n", filename);
+
+        read(conn_s, &format, 1);
+        format -= 48;
+        printf("%d\n", format);
+        Readline (conn_s, buffer, MAX_LINE-1, format);
+        if ( close (conn_s) < 0 ) {}
     }  
 
 }
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen, char* infile, char* outfile) {
+ssize_t Readline(int sockd, void *vptr, size_t maxlen, int type) {
     int rc;
     char c;
     for (int n = 0; n < maxlen; n++ ) {
         if ( (rc = read(sockd, &c, 1)) == 1 ) {
-            choose(&c, sockd);
+            choose(&c, sockd, type);
         }
         else if ( rc == 0 ) {
-            /*printf("%s\n", (char*)vptr);
-            memset(vptr, 0, maxlen);*/
             break;
         }
         else {
@@ -102,16 +106,16 @@ ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
     }
 }
 
-void choose(char* c, int sockd){
+void choose(char* c, int sockd, int type){
     if(*c == 0){
-        read_0(c, sockd);
+        read_0(c, sockd, type);
     }
     else if(*c == 1){
-        read_1(c, sockd);
+        read_1(c, sockd, type);
     }
 }
 
-void read_0(char* c, int sockd){
+void read_0(char* c, int sockd, int type){
     int rc;
     int num;
     if ( (rc = read(sockd, c, 1)) == 1 ) {
@@ -136,7 +140,7 @@ void read_0(char* c, int sockd){
     }
 }
 
-void read_1(char* c, int sockd){
+void read_1(char* c, int sockd, int type){
     char num[4];
     char cur[6];
 
@@ -169,7 +173,7 @@ void read_1(char* c, int sockd){
         }
         if( i == amount-1){
             printf("%s \n", cur);
-            choose(c, sockd);
+            choose(c, sockd, type);
         }
     }
 }

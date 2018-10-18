@@ -58,8 +58,9 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < lSize; i++){
         printf("%c", buffer[i]);
     }
-
-    Writeline( conn_s, buffer, lSize);
+    Writeline(conn_s, toname, strlen(toname));//First, send the name of the file to be created
+    Writeline(conn_s, format, strlen(format));//Then, send the format
+    Writeline( conn_s, buffer, lSize);//Last, send the actual data
 
     close(conn_s);
 }
@@ -78,6 +79,8 @@ ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
             nleft-=nwritten;
         }
     }
+    printf("\n%s", (char*)vptr);
+    while(pread(sockd, vptr, 1, 0) > 0){}
 }
 
 ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
