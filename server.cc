@@ -66,6 +66,7 @@ int main(int argc, char *argv[]){
         read(conn_s, &format, 1);
         format -= 48;
         printf("%d\n", format);
+
         Readline (conn_s, buffer, MAX_LINE-1, format);
         if ( close (conn_s) < 0 ) {}
     }  
@@ -135,7 +136,11 @@ void read_0(char* c, int sockd, int type){
         if ( (rc = read(sockd, &b, 1)) == 1 ) {}
         else if ( rc == 0 ) {}
 
-        printf("%i \n", (u_int16_t)((a<<8) + b));//prints the bytes next to one another
+        if(type == 1 || type == 3){
+            printf("%i \n", (u_int16_t)((a<<8) + b));//prints the bytes next to one another
+        }else{}
+
+        printf("%c%c \n", a, b);
         i++;
     }
 }
@@ -148,7 +153,13 @@ void read_1(char* c, int sockd, int type){
     fread(&num[1], 1, 1, infile);
     fread(&num[2], 1, 1, infile);*/
     int rc;
-    if ( (rc = read(sockd, &num, 3)) == 3 ) {}
+    if ( (rc = read(sockd, &num, 3)) == 3 ) {
+        if(type == 2 || type == 3){
+
+        }else{
+
+        }
+    }
     else {}//error
 
     int amount = (num[0]-48)*100 + (num[1]-48)*10 + (num[2]-48);

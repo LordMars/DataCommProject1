@@ -80,7 +80,7 @@ ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
         }
     }
     printf("\n%s", (char*)vptr);
-    while(pread(sockd, vptr, 1, 0) > 0){}
+    while(pread(sockd, vptr, 1, 0) > 0){}//does not finish function unless pipe is empty
 }
 
 ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
