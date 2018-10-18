@@ -61,11 +61,8 @@ int main(int argc, char *argv[]){
         }
 
         read(conn_s, filename, MAX_LINE);
-        printf("%s\n", filename);
 
         read(conn_s, &format, 1);
-        format -= 48;
-        printf("%d\n", format);
 
         Readline (conn_s, buffer, MAX_LINE-1, format);
         if ( close (conn_s) < 0 ) {}
@@ -138,9 +135,9 @@ void read_0(char* c, int sockd, int type){
 
         if(type == 1 || type == 3){
             printf("%i \n", (u_int16_t)((a<<8) + b));//prints the bytes next to one another
-        }else{}
-
-        printf("%c%c \n", a, b);
+        }else{
+            printf("%c%c \n", a, b);
+        }
         i++;
     }
 }
@@ -154,11 +151,6 @@ void read_1(char* c, int sockd, int type){
     fread(&num[2], 1, 1, infile);*/
     int rc;
     if ( (rc = read(sockd, &num, 3)) == 3 ) {
-        if(type == 2 || type == 3){
-
-        }else{
-
-        }
     }
     else {}//error
 
@@ -174,7 +166,32 @@ void read_1(char* c, int sockd, int type){
                 j++;
             } 
             else if(*c == ','){
-                printf("%s\n", cur);
+                if(type == 2 || type == 3){
+                    int source = atoi(cur);
+                    char toconvert[17];
+                    memset(toconvert, 0, 17);
+                    toconvert[17] = '\0';
+                    for(int i = 16; i >= 0; i--, source > 0){
+                        toconvert[i] = source%2;
+                        source/=2;
+                    }
+                    int res_one = toconvert[0];
+                    int res_two = toconvert[8];
+                    int i = 1;
+                    while(i<8){
+                        res_one << 1;
+                        res_one &= toconvert[i];
+                        i++;
+                    }
+                    while(i < 17){
+                        res_two << 1;
+                        res_two &= toconvert[i];
+                        i++;
+                    }
+                    printf("%c%c\n", res_one, res_two);
+                }else{
+                    printf("%s\n", cur);
+                }
                 memset(cur, 0, 6);
                 break;
             }
@@ -183,6 +200,34 @@ void read_1(char* c, int sockd, int type){
             }  
         }
         if( i == amount-1){
+            if(type == 2 || type == 3){
+                int source = atoi(cur);
+                char toconvert[17];
+                memset(toconvert, 0, 17);
+                toconvert[17] = '\0';
+                int res;
+                for(int i = 16; i >= 0; i--, source > 0){
+                    toconvert[i] = source%2;
+                    source/=2;
+                }
+                int res_one = toconvert[0];
+                int res_two = toconvert[8];
+                int i = 1;
+                while(i<8){
+                    res_one << 1;
+                    res_one &= toconvert[i];
+                    i++;
+                }
+                while(i < 17){
+                    res_two << 1;
+                    res_two &= toconvert[i];
+                    i++;
+                }
+                printf("%c%c\n", res_one, res_two);
+            }else{
+                printf("%s\n", cur);
+            }
+            memset(cur, 0, 6);
             printf("%s \n", cur);
             choose(c, sockd, type);
         }

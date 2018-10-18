@@ -58,8 +58,10 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < lSize; i++){
         printf("%c", buffer[i]);
     }
+    int format_int = atoi(format);
     Writeline(conn_s, toname, strlen(toname));//First, send the name of the file to be created
-    Writeline(conn_s, format, strlen(format));//Then, send the format
+    //Writeline(conn_s, format, strlen(format));//Then, send the format
+    write(conn_s, &format_int, 1);
     Writeline( conn_s, buffer, lSize);//Last, send the actual data
 
     close(conn_s);
