@@ -24,10 +24,9 @@ int main(int argc, char *argv[]) {
     char* fpath = argv[3];
     char* format = argv[4];
     char* toname = argv[5];
-    char* buffer;
 
     FILE * infile;
-    infile = fopen(argv[1], "rb");
+    infile = fopen(fpath, "rb");
 
     int conn_s;
     int LISTENQ;
@@ -48,15 +47,19 @@ int main(int argc, char *argv[]) {
         printf("Connection Error\n");
     }
 
-    int length = ftell(infile);
-    fread(buffer, 1, length, infile);
-    fclose(infile);
+    fseek( infile, 0L , SEEK_END);
+    int lSize = ftell( infile );
+    rewind( infile );
 
-    Writeline( conn_s, buffer, strlen(buffer));
+    char* buffer = (char*)malloc(lSize+1);
+    int result;
+    while((result = fread(buffer, 1, lSize, infile)) == 1){}
 
-    /*buffer = toname;
-    strcat(buffer, "\n");
-    Writeline( conn_s, buffer, strlen(buffer));*/
+    for(int i = 0; i < lSize; i++){
+        printf("%c", buffer[i]);
+    }
+
+    Writeline( conn_s, buffer, lSize);
 
     close(conn_s);
 }
