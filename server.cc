@@ -11,11 +11,11 @@
 #define ECHO_PORT (2002)
 #define MAX_LINE (1000)
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen, int type);
+ssize_t Readline(int sockd, void *vptr, size_t maxlen, int type, FILE* outfile);
 ssize_t Writeline(int sockd, void *vptr, size_t maxlen);
-void read_0(char* c, int sockd, int type);
-void read_1(char* c, int sockd, int type);
-void choose(char* c, int sockd, int type);
+void read_0(char* c, int sockd, int type, FILE* outfile);
+void read_1(char* c, int sockd, int type, FILE* outfile);
+void choose(char* c, int sockd, int type, FILE* outfile);
 
 int main(int argc, char *argv[]){
     if (argc != 2){
@@ -49,10 +49,8 @@ int main(int argc, char *argv[]){
         sockaddr cliaddr[MAX_LINE];
         socklen_t addrlen[MAX_LINE];
         char buffer[MAX_LINE];
-        char outfile_name[MAX_LINE];
         int format;
         char filename[MAX_LINE];
-        //char* length_of_name;
 
         if ((conn_s = accept (list_s, cliaddr, addrlen)) < 0) {//accepts an incoming connection from a client socket
             printf("%i\n",list_s);
@@ -60,22 +58,26 @@ int main(int argc, char *argv[]){
             printf("Accepting Error\n");
         }
 
-        read(conn_s, filename, MAX_LINE);
+        read(conn_s, filename, MAX_LINE);//reads int the name of the output file and opens it
+        FILE* outfile;
+        outfile = fopen(filename, "w");
 
-        read(conn_s, &format, 1);
+        read(conn_s, &format, 1);//reads in the format integer
 
-        Readline (conn_s, buffer, MAX_LINE-1, format);
-        if ( close (conn_s) < 0 ) {}
+        Readline (conn_s, buffer, MAX_LINE-1, format, outfile);//Reads in the data from the input file
+        if ( close (conn_s) < 0 ) {
+            fclose(outfile);
+        }
     }  
 
 }
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen, int type) {
+ssize_t Readline(int sockd, void *vptr, size_t maxlen, int type, FILE* outfile) {//begins the reading of the file data
     int rc;
     char c;
     for (int n = 0; n < maxlen; n++ ) {
         if ( (rc = read(sockd, &c, 1)) == 1 ) {
-            choose(&c, sockd, type);
+            choose(&c, sockd, type, outfile);
         }
         else if ( rc == 0 ) {
             break;
@@ -104,21 +106,24 @@ ssize_t Writeline(int sockd, void *vptr, size_t maxlen) {
     }
 }
 
-void choose(char* c, int sockd, int type){
+void choose(char* c, int sockd, int type, FILE* outfile){//determines the type of reading that needs to be done depending on the format number
     if(*c == 0){
-        read_0(c, sockd, type);
+        read_0(c, sockd, type, outfile);
     }
     else if(*c == 1){
-        read_1(c, sockd, type);
+        read_1(c, sockd, type, outfile);
     }
 }
 
-void read_0(char* c, int sockd, int type){
+void read_0(char* c, int sockd, int type, FILE* outfile){//takes in byte data and converts it to ascii as nescessary
     int rc;
     int num;
     if ( (rc = read(sockd, c, 1)) == 1 ) {
         num = int(*c);
-        printf("Amount: %i\n", num);
+        char res[MAX_LINE];//This char * is both written to a file and printed to the terminal screen.
+        sprintf(res, "Amount: %i\n", num);
+        printf("%s", res);
+        fwrite (res, 1, sizeof(res), outfile);
     }
     else if ( rc == 0 ) {}
 
@@ -133,40 +138,46 @@ void read_0(char* c, int sockd, int type){
         if ( (rc = read(sockd, &b, 1)) == 1 ) {}
         else if ( rc == 0 ) {}
 
-        if(type == 1 || type == 3){
-            printf("%i \n", (u_int16_t)((a<<8) + b));//prints the bytes next to one another
+        char res[MAX_LINE];
+        if(type == 1 || type == 3){//converts the bytes into ascii numbers format 1 or 3 is passed
+            sprintf(res, "%i \n", (u_int16_t)((a<<8) + b));
         }else{
-            printf("%c%c \n", a, b);
+            sprintf(res, "%c%c \n", a, b);
         }
+        printf("%s", res);
+        fwrite (res, 1, sizeof(res), outfile);
         i++;
     }
 }
 
-void read_1(char* c, int sockd, int type){
+void read_1(char* c, int sockd, int type, FILE* outfile){//takes in data in ascii form and translates it as nescessary
     char num[4];
     char cur[6];
 
-    /*fread(&num[0], 1, 1, infile);
-    fread(&num[1], 1, 1, infile);
-    fread(&num[2], 1, 1, infile);*/
     int rc;
     if ( (rc = read(sockd, &num, 3)) == 3 ) {
     }
-    else {}//error
+    else {}
 
     int amount = (num[0]-48)*100 + (num[1]-48)*10 + (num[2]-48);
-    printf("Amount: %i \n", amount);
+
+    char res[30];
+    memset(res, 0, 30);
+    sprintf(res, "Amount: %i \n", amount);
+    printf("%s", res);
+    fwrite (res, 1, sizeof(res), outfile);
+
     memset(cur, 0, 6);
     for(int i = 0; i < amount; i++){
         int j = 0;
         int rc;
-        while((rc = read(sockd, c, 1)) == 1/*fread(c, 1, 1, infile) == 1*/ && j < 6){ 
+        while((rc = read(sockd, c, 1)) == 1 && j < 6){ 
             if(*c != ',' && *c != 0 && *c != 1){
                 cur[j] = *c;
                 j++;
             } 
             else if(*c == ','){
-                if(type == 2 || type == 3){
+                if(type == 2 || type == 3){//converts ascii numbers into bytes
                     int source = atoi(cur);
                     char toconvert[17];
                     memset(toconvert, 0, 17);
@@ -188,9 +199,16 @@ void read_1(char* c, int sockd, int type){
                         res_two &= toconvert[i];
                         i++;
                     }
-                    printf("%c%c\n", res_one, res_two);
+                    memset(res, 0, 30);
+                    sprintf(res, "%c%c\n", res_one, res_two);
+                    printf("%s", res);
+                    fwrite (res, 1, sizeof(res), outfile);
+                    
                 }else{
-                    printf("%s\n", cur);
+                    memset(res, 0, 30);
+                    sprintf(res, "%s\n", cur);
+                    printf("%s", res);
+                    fwrite (res, 1, sizeof(res), outfile);
                 }
                 memset(cur, 0, 6);
                 break;
@@ -205,7 +223,6 @@ void read_1(char* c, int sockd, int type){
                 char toconvert[17];
                 memset(toconvert, 0, 17);
                 toconvert[17] = '\0';
-                int res;
                 for(int i = 16; i >= 0; i--, source > 0){
                     toconvert[i] = source%2;
                     source/=2;
@@ -223,13 +240,21 @@ void read_1(char* c, int sockd, int type){
                     res_two &= toconvert[i];
                     i++;
                 }
-                printf("%c%c\n", res_one, res_two);
+                memset(res, 0, 30);
+                sprintf(res, "%c%c\n", res_one, res_two);
+                printf("%s", res);
+                fwrite (res, 1, sizeof(res), outfile);
             }else{
-                printf("%s\n", cur);
+                memset(res, 0, 30);
+                sprintf(res, "%s\n", cur);
+                printf("%s", res);
+                fwrite (res, 1, sizeof(res), outfile);
             }
             memset(cur, 0, 6);
-            printf("%s \n", cur);
-            choose(c, sockd, type);
+            memset(res, 0, 30);
+            sprintf(res, "%s \n", cur);
+            fwrite(res, 1, sizeof(res), outfile);
+            choose(c, sockd, type, outfile);//returns to the choose function to get the type of the next bit of data
         }
     }
 }
